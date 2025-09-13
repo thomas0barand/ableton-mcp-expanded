@@ -49,6 +49,8 @@ This project provides comprehensive, programmatic control over the Ableton Live 
     * Load instruments and effects from Ableton's browser by URI.
     * Get a full list of parameters for any device on a track.
     * Set and batch-set device parameters using normalized values (0.0 to 1.0).
+    * Real-time parameter control with ultra-low latency UDP updates.
+    * Interactive parameter exploration and preset management.
 
 * **Automation and Envelopes:**
     * Add and clear automation points for any device parameter within a clip. [This feature isn't working perfectly yet.]
@@ -225,6 +227,7 @@ This project includes several specialized components:
 
 ### **Experimental Tools & Examples**
 - **XY Mouse Controller**: Example demonstrating how to build custom Ableton controllers
+- **Device Parameter Examples**: Complete examples for EQ control, parameter exploration, and real-time control
 - **Extensible Framework**: Foundation for creating your own control interfaces
 - **Proof of Concept**: Shows the power and flexibility of the MCP approach
 
@@ -233,7 +236,8 @@ This project includes several specialized components:
 ## Documentation
 
 - **[Installation Guide](INSTALLATION.md)** - Detailed setup instructions
-- **[User Guide](README.md)** - What, which, and how  
+- **[User Guide](README.md)** - What, which, and how
+- **[Device Parameter Examples](examples/README.md)** - Complete examples for controlling EQ and other device parameters  
 
 ---
 

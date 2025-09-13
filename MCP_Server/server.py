@@ -186,7 +186,7 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
 # Create the MCP server with lifespan support
 mcp = FastMCP(
     "AbletonMCP",
-    description="Ableton Live integration through the Model Context Protocol",
+    instructions="Ableton Live integration through the Model Context Protocol",
     lifespan=server_lifespan
 )
 
@@ -651,6 +651,98 @@ def load_drum_kit(ctx: Context, track_index: int, rack_uri: str, kit_path: str) 
     except Exception as e:
         logger.error(f"Error loading drum kit: {str(e)}")
         return f"Error loading drum kit: {str(e)}"
+
+@mcp.tool()
+def get_device_parameters(ctx: Context, track_index: int, device_index: int) -> str:
+    """
+    Get detailed information about all parameters for a specific device on a track.
+    
+    Parameters:
+    - track_index: The index of the track containing the device
+    - device_index: The index of the device on the track
+    """
+    try:
+        ableton = get_ableton_connection()
+        result = ableton.send_command("get_device_parameters", {
+            "track_index": track_index,
+            "device_index": device_index
+        })
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        logger.error(f"Error getting device parameters: {str(e)}")
+        return f"Error getting device parameters: {str(e)}"
+
+@mcp.tool()
+def set_device_parameter(ctx: Context, track_index: int, device_index: int, parameter_index: int, value: float) -> str:
+    """
+    Set a single device parameter value using normalized values (0.0 to 1.0).
+    
+    Parameters:
+    - track_index: The index of the track containing the device
+    - device_index: The index of the device on the track
+    - parameter_index: The index of the parameter to set
+    - value: Normalized value between 0.0 and 1.0 (0.0 = minimum, 1.0 = maximum)
+    """
+    try:
+        if not (0.0 <= value <= 1.0):
+            return "Error: Value must be between 0.0 and 1.0 (normalized range)"
+        
+        ableton = get_ableton_connection()
+        result = ableton.send_command("set_device_parameter", {
+            "track_index": track_index,
+            "device_index": device_index,
+            "parameter_index": parameter_index,
+            "value": value
+        })
+        
+        if "error" in result:
+            return f"Error setting parameter: {result['error']}"
+        
+        param_name = result.get("parameter_name", f"Parameter {parameter_index}")
+        actual_value = result.get("value", "unknown")
+        return f"Set {param_name} to {actual_value} (normalized: {value})"
+    except Exception as e:
+        logger.error(f"Error setting device parameter: {str(e)}")
+        return f"Error setting device parameter: {str(e)}"
+
+@mcp.tool()
+def batch_set_device_parameters(ctx: Context, track_index: int, device_index: int, parameter_indices: List[int], values: List[float]) -> str:
+    """
+    Set multiple device parameters at once using normalized values (0.0 to 1.0).
+    This is more efficient than setting parameters individually.
+    
+    Parameters:
+    - track_index: The index of the track containing the device
+    - device_index: The index of the device on the track
+    - parameter_indices: List of parameter indices to set
+    - values: List of normalized values (0.0 to 1.0) corresponding to each parameter index
+    """
+    try:
+        if len(parameter_indices) != len(values):
+            return "Error: parameter_indices and values must have the same length"
+        
+        for value in values:
+            if not (0.0 <= value <= 1.0):
+                return "Error: All values must be between 0.0 and 1.0 (normalized range)"
+        
+        ableton = get_ableton_connection()
+        result = ableton.send_command("batch_set_device_parameters", {
+            "track_index": track_index,
+            "device_index": device_index,
+            "parameter_indices": parameter_indices,
+            "values": values
+        })
+        
+        if "error" in result:
+            return f"Error setting parameters: {result['error']}"
+        
+        updated_count = result.get("updated_parameters_count", 0)
+        details = result.get("details", [])
+        param_names = [p.get("name", f"Param {p.get('index', '?')}") for p in details]
+        return f"Successfully set {updated_count} parameters: {', '.join(param_names)}"
+    except Exception as e:
+        logger.error(f"Error batch setting device parameters: {str(e)}")
+        return f"Error batch setting device parameters: {str(e)}"
 
 # Main execution
 def main():
